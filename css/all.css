@@ -702,7 +702,9 @@ body {
   background-color: #F8F8F8;
   padding: 60px 0;
 }
-
+.emptyCartsP {
+  text-align: center;
+}
 .shoppingCart-table {
   margin: 0 auto;
   border-collapse: collapse;

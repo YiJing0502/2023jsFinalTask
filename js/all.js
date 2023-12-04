@@ -1,5 +1,7 @@
 // 共用變數
 let cartsData = [];
+let productsData = [];
+const shoppingCartTable = document.querySelector('.shoppingCart-table');
 const shoppingCartTableTbody = document.querySelector('.shoppingCart-table-tbody');
 const totalPriceDom = document.querySelector('.totalPrice');
 
@@ -11,7 +13,7 @@ function init() {
 init();
 // axios 獲取產品列表
 function getProductList() {
-  let productsData = [];
+
   axios.get(`${apiUrl}${apiPath}/products`)
     .then(function (response) {
       productsData = response.data.products;
@@ -28,6 +30,23 @@ function getCartsList() {
 }
 // 渲染 購物車列表
 function renderCartsList(data) {
+  const emptyCartsP = document.querySelector('.emptyCartsP');
+  const discardAllBtn = document.querySelector('.discardAllBtn');
+  console.dir(discardAllBtn);
+  // 控制購物車清空時的顯示
+  if(data.carts.length<1){
+    emptyCartsP.style.display = '';
+    shoppingCartTable.style.display = 'none';
+  }else{
+    emptyCartsP.style.display = 'none';
+    shoppingCartTable.style.display = '';
+  };
+  // 控制購物車刪除所有按鈕的顯示
+  if(data.carts.length<=1){
+    discardAllBtn.style.display = 'none';
+  }else{
+    discardAllBtn.style.display = 'inline-block';
+  };
   const dataCarts = data.carts;
   let str = '';
   let totalPrice = 0;
@@ -87,7 +106,7 @@ function productSelectFn() {
     };
   });
 };
-// 產品加入購物車
+// 產品加入購物車 alert
 const productWrap = document.querySelector('.productWrap');
 productWrap.addEventListener('click', function (event) {
   event.preventDefault();
@@ -105,18 +124,25 @@ productWrap.addEventListener('click', function (event) {
   let postObj = {
     "data": {
       "productId": productId,
-      "quantity": numCheck
+      "quantity": numCheck,
     },
   };
   axios.post(`${apiUrl}${apiPath}/carts`, postObj)
     .then(function (response) {
-      // 重新渲染/更新購物車
-      cartsData = response.data;
-      renderCartsList(cartsData);
+      if(response.data.carts){
+        // 重新渲染/更新購物車
+        console.log(response);
+        cartsData = response.data;
+        renderCartsList(cartsData);
+        alert('商品成功加入購物車！');
+      }
+    })
+    .catch(function(error){
+      alert(error.response.data.message);
     });
 });
-// 購物車表單監聽(刪除)
-const shoppingCartTable = document.querySelector('.shoppingCart-table');
+// 購物車表單監聽(刪除) alert
+
 shoppingCartTable.addEventListener('click', function (event) {
   event.preventDefault();
   const targetClass = event.target.getAttribute('class');
@@ -125,34 +151,56 @@ shoppingCartTable.addEventListener('click', function (event) {
     axios.delete(`${apiUrl}${apiPath}/carts`)
       .then(function (response) {
         // 重新渲染/更新購物車
-        cartsData = response.data;
-        renderCartsList(cartsData);
+        if(response.data.carts){
+          cartsData = response.data;
+          renderCartsList(cartsData);
+          alert('刪除所有商品成功！');
+        }
       })
       .catch(function (error) {
-        if (error.response.status === 400) {
-          alert('購物車內已經沒有商品了喔！')
-        }
+        alert(error.response.data.message);
       });
   } else if (targetParentClass === 'discardBtn') {
     let cartId = event.target.parentElement.dataset.id;
     axios.delete(`${apiUrl}${apiPath}/carts/${cartId}`)
       .then(function (response) {
         // 重新渲染/更新購物車
-        cartsData = response.data;
-        renderCartsList(cartsData);
+        if(response.data.carts){
+          cartsData = response.data;
+          renderCartsList(cartsData);
+          alert('刪除商品成功！');
+        }
       })
       .catch(function (error) {
-        console.log(error);
+        alert(error.response.data.message);
       });
   };
 });
 // 預定資料 - 驗證與收集
+// 姓名 特別驗證
+const customerName = document.querySelector('#customerName');
+const orderInfoMessageName = document.querySelector('.orderInfo-message[data-message="姓名"]');
+customerName.addEventListener('blur', function () {
+  // 姓名 空白驗證
+  if (customerName.value.trim() === '') {
+    orderInfoMessageName.style.display = 'block';
+  } else {
+    orderInfoMessageName.style.display = 'none';
+  };
+})
 // 手機 特別驗證
 const customerPhone = document.querySelector('#customerPhone');
 const orderInfoMessagePhone = document.querySelector('.orderInfo-message[data-message="電話"]');
 customerPhone.addEventListener('blur', function () {
   if (validatePhone(customerPhone.value) === false) {
     orderInfoMessagePhone.textContent = '請輸入正確的手機格式';
+    orderInfoMessagePhone.style.display = 'block';
+  } else {
+    orderInfoMessagePhone.style.display = 'none';
+  };
+   // 手機 空白驗證
+  if (customerPhone.value.trim() === '') {
+    orderInfoMessagePhone.textContent = '必填';
     orderInfoMessagePhone.style.display = 'block';
   } else {
     orderInfoMessagePhone.style.display = 'none';
@@ -168,6 +216,24 @@ customerEmail.addEventListener('blur', function () {
   } else {
     orderInfoMessageEmail.style.display = 'none';
   };
+  // email 空白驗證
+  if (customerEmail.value.trim() === '') {
+    orderInfoMessageEmail.textContent = '必填';
+    orderInfoMessageEmail.style.display = 'block';
+  } else {
+    orderInfoMessageEmail.style.display = 'none';
+  };
+});
+// 寄送地址 特別驗證
+const customerAddress = document.querySelector('#customerAddress');
+const orderInfoMessageAddress = document.querySelector('.orderInfo-message[data-message="寄送地址"]');
+customerAddress.addEventListener('blur', function () {
+  // 寄送地址 空白驗證
+  if (customerAddress.value.trim() === '') {
+    orderInfoMessageAddress.style.display = 'block';
+  } else {
+    orderInfoMessageAddress.style.display = 'none';
+  };
 })
 // 按下 送出預定資料 點擊事件監聽
 const orderInfoBtn = document.querySelector('.orderInfo-btn');
@@ -180,56 +246,25 @@ function sentOrder(event) {
   };
   // 預定資料 元素
   const orderInfoForm = document.querySelector('.orderInfo-form');
-  event.preventDefault();
-  const customerName = document.querySelector('#customerName');
-  const customerAddress = document.querySelector('#customerAddress');
   const tradeWay = document.querySelector('#tradeWay');
   // 驗證提醒 
-  const orderInfoMessageName = document.querySelector('.orderInfo-message[data-message="姓名"]');
-  const orderInfoMessageAddress = document.querySelector('.orderInfo-message[data-message="寄送地址"]');
-  // 使用者名稱 驗證
-  if (customerName.value === '') {
-    orderInfoMessageName.style.display = 'block';
-  } else {
-    orderInfoMessageName.style.display = 'none';
-  };
-  // 手機 驗證
-  if (customerPhone.value === '') {
-    orderInfoMessagePhone.textContent = '必填';
-    orderInfoMessagePhone.style.display = 'block';
-  } else {
-    orderInfoMessagePhone.style.display = 'none';
-  }
-  // email 驗證
-  if (customerEmail.value === '') {
-    orderInfoMessageEmail.textContent = '必填';
-    orderInfoMessageEmail.style.display = 'block';
-  } else {
-    orderInfoMessageEmail.style.display = 'none';
-  };
-  // 地址 驗證
-  if (customerAddress.value === '') {
-    orderInfoMessageAddress.style.display = 'block';
-  } else {
-    orderInfoMessageAddress.style.display = 'none';
-  };
-  // 付款方式 驗證
-  if (tradeWay.value === '') {
+  // 付款方式 空白驗證
+  if (tradeWay.value.trim() === '') {
     alert('請選擇交易方式！');
   };
   // 如果有其中一個沒有填寫，則返回
-  if (customerName.value === '' || customerPhone.value === '' || customerEmail.value === '' || customerAddress.value === '' || tradeWay.value === '') {
+  if (customerName.value.trim() === '' || customerPhone.value.trim() === '' || customerEmail.value.trim() === '' || customerAddress.value.trim() === '' || tradeWay.value.trim() === '') {
     return;
   };
   // 收集預定資料
   let orderObject = {
     "data": {
       "user": {
-        "name": customerName.value,
-        "tel": customerPhone.value,
-        "email": customerEmail.value,
-        "address": customerAddress.value,
-        "payment": tradeWay.value,
+        "name": customerName.value.trim(),
+        "tel": customerPhone.value.trim(),
+        "email": customerEmail.value.trim(),
+        "address": customerAddress.value.trim(),
+        "payment": tradeWay.value.trim(),
       },
     },
   };
@@ -244,7 +279,7 @@ function sentOrder(event) {
       };
     })
     .catch(function (error) {
-      console.log(error);
+      alert(error.response.data.message);
     });
 };
 
