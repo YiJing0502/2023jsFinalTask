@@ -106,7 +106,7 @@ function productSelectFn() {
     };
   });
 };
-// 產品加入購物車 alert
+// 產品加入購物車 
 const productWrap = document.querySelector('.productWrap');
 productWrap.addEventListener('click', function (event) {
   event.preventDefault();
@@ -141,8 +141,7 @@ productWrap.addEventListener('click', function (event) {
       alert(error.response.data.message);
     });
 });
-// 購物車表單監聽(刪除) alert
-
+// 購物車表單監聽(刪除) 
 shoppingCartTable.addEventListener('click', function (event) {
   event.preventDefault();
   const targetClass = event.target.getAttribute('class');

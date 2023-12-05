@@ -6,11 +6,33 @@ let tokenKeyObj = {
   }
 };
 const orderPageTableTbody = document.querySelector('.orderPage-table-tbody');
+const emptyOrdersP = document.querySelector('.emptyOrdersP');
+const orderPageTable = document.querySelector('.orderPage-table');
+const discardAllBtn = document.querySelector('.discardAllBtn');
+const buttonArea = document.querySelector('.buttonArea');
+// 全產品類別營收比重
+const allTypeRevenue = document.querySelector('.allTypeRevenue');
+// 全品項營收比重
+const allProductRevenue = document.querySelector('.allProductRevenue');
 function init() {
   getOrdersList();
 };
 init();
 // 渲染 後台圖表
+buttonArea.addEventListener('click', function(event){
+  if(event.target.getAttribute('class')==='allTypeRevenueBtn'){
+    allTypeRevenue.style.display = 'block';
+    renderC3(ordersData)
+  }else{
+    allTypeRevenue.style.display = 'none';
+  } 
+  if(event.target.getAttribute('class')==='allProductRevenueBtn'){
+    allProductRevenue.style.display = 'block';
+    renderC3(ordersData);
+  }else{
+    allProductRevenue.style.display = 'none';
+  }
+})
 function renderC3(data) {
   // 1. 全產品類別營收比重
   // 1-1. 資料處理
@@ -89,16 +111,37 @@ function renderC3(data) {
     },
   });
 };
-// axios 取得訂單列表
+// axios 取得訂單列表 
 function getOrdersList() {
   // 不太懂此tokenKeyObj格式，跟文件寫的不一樣
   axios.get(`${apiAdminUrl}${apiPath}/orders`, tokenKeyObj)
     .then(function (response) {
       ordersData = response.data.orders;
+      // 有訂單時
       renderOrdersList(ordersData);
+      // 無任何訂單時
+      if(ordersData.length === 0) {
+      orderPageTable.style.display = 'none';
+      discardAllBtn.style.display = 'none';
+      allTypeRevenue.style.display = 'none';
+      allProductRevenue.style.display = 'none';
+      buttonArea.style.display = 'none';
+      // 提醒字
+      emptyOrdersP.style.display = '';
+      console.log('沒有訂單');
+      }else{
+      orderPageTable.style.display = '';
+      discardAllBtn.style.display = '';
+      allTypeRevenue.style.display = '';
+      allProductRevenue.style.display = '';
+      buttonArea.style.display = '';
+      console.log('有訂單');
+      // 提醒字
+      emptyOrdersP.style.display = 'none';
+      };
     })
     .catch(function (error) {
-      console.log(error);
+      alert(error.response.data.message);
     });
 };
 // 渲染訂單列表
@@ -154,7 +197,7 @@ orderPageTableTbody.addEventListener('click', function (event) {
     putOrderStatus(orderStatus, orderId);
   };
 });
-// axios 修改訂單狀態
+// axios 修改訂單狀態 
 function putOrderStatus(status, id) {
   let newStatus;
   if (status == 'true') {
@@ -170,31 +213,27 @@ function putOrderStatus(status, id) {
   };
   axios.put(`${apiAdminUrl}${apiPath}/orders`, statusObj, tokenKeyObj)
     .then(function (response) {
-      if(response.data.message){
-        alert(response.data.message);
-      };
       ordersData = response.data.orders;
       renderOrdersList(ordersData);
+      alert('修改狀態成功！');
     })
     .catch(function (error) {
-      console.log(error);
+      alert(error.response.data.message);
     });
 };
-// axios 刪除單一筆訂單
+// axios 刪除單一筆訂單 
 function deleteOrder(id) {
   axios.delete(`${apiAdminUrl}${apiPath}/orders/${id}`, tokenKeyObj)
     .then(function (response) {
       ordersData = response.data.orders;
       renderOrdersList(ordersData);
+      alert('成功刪除一筆訂單');
     })
     .catch(function (error) {
-      if (error.response.status === 400) {
-        alert('找不到該筆訂單，無法執行刪除動作')
-      }
+      alert(error.response.data.message);
     });
 };
-// axios 刪除所有訂單
-const discardAllBtn = document.querySelector('.discardAllBtn');
+// axios 刪除所有訂單 
 discardAllBtn.addEventListener('click', function (event) {
   event.preventDefault();
   if (ordersData.length === 0) {
@@ -205,14 +244,12 @@ discardAllBtn.addEventListener('click', function (event) {
     .then(function (response) {
       ordersData = response.data.orders;
       renderOrdersList(ordersData);
-      alert('全部訂單刪除成功')
+      alert('全部訂單刪除成功');
     })
     .catch(function (error) {
-      if (error.response.status === 400) {
-        alert('無任何訂單，無法執行刪除動作');
-      };
+      alert(error.response.data.message);
     });
-})
+});
 // 日期轉換器
 function unixTimestamp(timestamp) {
   let date = new Date(timestamp * 1000);
